@@ -1,0 +1,14 @@
+# Ignore all Images
+*.jpg
+*.jpeg
+*.TMT
+*.shrd
+
+# Ignore TFRecord
+*.TFRecords
+
+# Ignore MATLAB autosaves
+*.m~
+
+# Ignore Mac OS's stupid thing
+*.DS_Store
