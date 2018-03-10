@@ -14,7 +14,7 @@ TMthresh = .015;
 shrd_path   = '../../db/Template Sherds/Processed';
 
     % Letter of speciemen i.e. 'E' 'A' etc.
-specimen    = 'B';
+specimen    = 'E';
 
     % Option to delete jpg_path before each run (1-yes/0-no)
 delImg = 1;
@@ -69,7 +69,7 @@ if exist(blank_path,'dir')~=7
     mkdir(blank_path)
 else
     if delImg
-        rmdir(blank_path, 's')
+        delete(strcat(blank_path, '*.jpg'))
     else
     end
 end
@@ -79,7 +79,7 @@ if exist(marked_path,'dir')~=7
     mkdir(marked_path)
 else
     if delImg
-        rmdir(marked_path, 's')
+        delete(strcat(marked_path, '*.jpg'))
     else
     end
 end
@@ -89,19 +89,21 @@ TMpcts = zeros(nStamps*nSherds);    % TM percentages
 
 nblank = 0;                         % Number of blanks
 
-%% One happy notification to user before beginning hefty algorithm
-fprintf('Generating %i sherds, this may take a long time\n\r',...
-    length(cfiles)*nSherds*nStamps);
-fprintf('Marked sherds will be stored in: \n\r \t%s\n\r',marked_path);
-fprintf('Blank sherds will be stored in: \n\r \t%s\n\r',blank_path);
-
-%% Make Sherds
+%% Gather files
     % Find all ceramics under directory
 cfiles = dir(strcat(tmt_path, '/*.', tmtExt));
 
     % Find all sherds under directory
 sfiles = dir(strcat(shrd_path, '/*.', sext));
 
+%% One happy notification to user before beginning hefty algorithm
+fprintf('Generating %i sherds, this may take a long time\n\r',...
+    length(cfiles)*nSherds*nStamps);
+
+fprintf('Marked sherds will be stored in: \n\r \t%s\n\r',marked_path);
+fprintf('Blank sherds will be stored in: \n\r \t%s\n\r',blank_path);
+
+%% Make Sherds
 if nSherds > length(sfiles)
     nSherds = length(sfiles);
     fprintf('nSherds is greater than available sherd files, using max possible\n\r');
