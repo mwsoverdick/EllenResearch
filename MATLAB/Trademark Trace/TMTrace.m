@@ -6,17 +6,20 @@ clear all;
 close all;
 
 %% Configurable Parameters
-    % Path to folder with untraced ceramic images
-image_path	= '../../db/Complete Ceramics/Untraced/G';          
-
-    % Path to write TMT files to
-tmt_path    = '../../db/Complete Ceramics/Traced/G';    
+    % Letter of speciemen i.e. 'E' 'A' etc.
+specimen    = 'B';      
 
 img_ext     = 'jpg';        % File extension of images (no dot)
 
-pause_t 	= 1.5;         	% Pause time after finishing image
+pause_t 	= 0;         	% Pause time after finishing image
 
 %% Setup
+    % Path to ceramics to be sherded (.TMT files)
+tmt_path    = strcat('../../db/Complete Ceramics/Traced/', specimen);
+
+    % Path to place synthetic sherds
+image_path    = strcat('../../db/Synthesized Sherds/', specimen);
+
 addpath('../lib/');
 
     % Make sherds path

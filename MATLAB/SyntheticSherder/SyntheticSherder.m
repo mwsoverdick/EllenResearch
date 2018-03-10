@@ -1,7 +1,7 @@
 % SyntheticSherder.m - Create synthesized ML database.
 % Mitchell Overdick 11/21/2017
 
-clear all;  % better safe than sorry
+% clear all;  % better safe than sorry
 
 %% User Configurable Parameters
     % Safe area of plate (as percentage of radius)
@@ -14,10 +14,13 @@ TMthresh = .015;
 shrd_path   = '../../db/Template Sherds/Processed';
 
     % Letter of speciemen i.e. 'E' 'A' etc.
-specimen    = 'F';
+specimen    = 'B';
 
     % Option to delete jpg_path before each run (1-yes/0-no)
 delImg = 1;
+
+    % Normalize dimensions (make all images same, square dimension)
+normDim = 0;
 
     % How many times to stamp sherd into ceramic (randomized)
 nStamps = 20;
@@ -33,7 +36,8 @@ show = 0;
 tmt_path    = strcat('../../db/Complete Ceramics/Traced/', specimen);
 
     % Path to place synthetic sherds
-jpg_path    = strcat('../../db/Synthesized Sherds/', specimen);
+blank_path    = strcat('../../db/Synthesized Sherds/Blank/', specimen,'/');
+marked_path   = strcat('../../db/Synthesized Sherds/Marked/', specimen,'/');
 
 
 addpath ../lib/         % Add library path
@@ -47,41 +51,49 @@ warning('off','images:initSize:adjustingMag');
 
 seed = 43254;           % Rand seed
 
-if ~exist(strcat(shrd_path,'/meta.shrdinf'))
+if ~exist(strcat(shrd_path,'/meta.shrdinf'),'file')
     error('Missing template sherd info: "meta.shrdinf" in template sherd directory!');
 else
     load(strcat(shrd_path,'/meta.shrdinf'),'-mat');
-    fprintf('Sherd image dimensions: %i x %i\n\r',diag,diag);
-end
-
-%% File system setup
-
-    % Make sshpath if doesn't exist, delete if desired
-if exist(jpg_path,'dir')~=7
-    mkdir(jpg_path);
-else
-    if delImg
-        rmdir(jpg_path, 's')
+    if normDim > 0
+        fprintf('Sherd image dimensions: %i x %i\n\r',diag,diag);
     else
     end
 end
 
+%% File system setup
+
+    % Make image paths if don't exist, delete if desired
     % Make blanks path
-if exist(strcat(jpg_path,'/Blank'),'dir')~=7
-    mkdir(strcat(jpg_path,'/Blank'))
+if exist(blank_path,'dir')~=7
+    mkdir(blank_path)
 else
+    if delImg
+        rmdir(blank_path, 's')
+    else
+    end
 end
 
     % Make marked path
-if exist(strcat(jpg_path,'/Marked'),'dir')~=7
-    mkdir(strcat(jpg_path,'/Marked'))
+if exist(marked_path,'dir')~=7
+    mkdir(marked_path)
 else
+    if delImg
+        rmdir(marked_path, 's')
+    else
+    end
 end
 
 %% Statistical Preallocations
 TMpcts = zeros(nStamps*nSherds);    % TM percentages
 
 nblank = 0;                         % Number of blanks
+
+%% One happy notification to user before beginning hefty algorithm
+fprintf('Generating %i sherds, this may take a long time\n\r',...
+    length(cfiles)*nSherds*nStamps);
+fprintf('Marked sherds will be stored in: \n\r \t%s\n\r',marked_path);
+fprintf('Blank sherds will be stored in: \n\r \t%s\n\r',blank_path);
 
 %% Make Sherds
     % Find all ceramics under directory
@@ -164,23 +176,35 @@ for i = 1:length(cfiles)
             BL = rcoords(1) - ceil(s(2)/2)+1; % Bottom Left
             BR = rcoords(1) + floor(s(2)/2);  % Bottom Right
             
-                % Pre allocate canvas
-            out     = uint8(zeros(diag, diag, 3));
-            
-                % Calculate positions to store sherd to keep constant dim
-                % Row:
-            pdrl    = length(TL:TR);
-            pdr     = floor((diag-pdrl) / 2);
-            pdre    = pdr+pdrl-1;
-                % Column:
-            pdcl    = length(BL:BR);
-            pdc     = floor((diag-pdcl) / 2);
-            pdce    = pdc+pdcl-1;
-            
-                % Store sherd within large canvas
-            out(pdr:pdre,pdc:pdce,1) = img(TL:TR,BL:BR,1).*rBW;
-            out(pdr:pdre,pdc:pdce,2) = img(TL:TR,BL:BR,2).*rBW;
-            out(pdr:pdre,pdc:pdce,3) = img(TL:TR,BL:BR,3).*rBW; 
+                % Only normalize image size if desired
+            if normDim > 0
+                    % Pre allocate canvas
+                out     = uint8(zeros(diag, diag, 3));
+
+                    % Calculate positions to store sherd to keep constant dim
+                    % Row:
+                pdrl    = length(TL:TR);
+                pdr     = floor((diag-pdrl) / 2);
+                pdre    = pdr+pdrl-1;
+                    % Column:
+                pdcl    = length(BL:BR);
+                pdc     = floor((diag-pdcl) / 2);
+                pdce    = pdc+pdcl-1;
+
+                    % Store sherd within large canvas
+                out(pdr:pdre,pdc:pdce,1) = img(TL:TR,BL:BR,1).*rBW;
+                out(pdr:pdre,pdc:pdce,2) = img(TL:TR,BL:BR,2).*rBW;
+                out(pdr:pdre,pdc:pdce,3) = img(TL:TR,BL:BR,3).*rBW;
+            else
+                    % Pre allocate canvas
+                out     = uint8(zeros(length(TL:TR), length(BL:BR), 3));
+                
+                    % Store sherd within canvas
+                out(:,:,1) = img(TL:TR,BL:BR,1).*rBW;
+                out(:,:,2) = img(TL:TR,BL:BR,2).*rBW;
+                out(:,:,3) = img(TL:TR,BL:BR,3).*rBW;
+            end
+             
             
                 % Check if trademark is in image
             TMchk = TMBW(TL:TR,BL:BR).*rBW;
@@ -212,10 +236,10 @@ for i = 1:length(cfiles)
                     
                 % Write image
             if blank
-                imwrite(out, strcat(jpg_path,'/Blank/',sname), 'JPEG');
+                imwrite(out, strcat(blank_path,sname), 'JPEG');
                 nblank = nblank + 1;
             else
-                imwrite(out, strcat(jpg_path,'/Marked/',sname), 'JPEG');
+                imwrite(out, strcat(marked_path,sname), 'JPEG');
             end
         end
     end
