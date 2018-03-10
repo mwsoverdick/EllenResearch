@@ -14,7 +14,7 @@ TMthresh = .015;
 shrd_path   = '../../db/Template Sherds/Processed';
 
     % Letter of speciemen i.e. 'E' 'A' etc.
-specimen    = 'E';
+specimen    = 'F';
 
     % Option to delete jpg_path before each run (1-yes/0-no)
 delImg = 1;
@@ -39,6 +39,15 @@ tmt_path    = strcat('../../db/Complete Ceramics/Traced/', specimen);
 blank_path    = strcat('../../db/Synthesized Sherds/Blank/', specimen,'/');
 marked_path   = strcat('../../db/Synthesized Sherds/Marked/', specimen,'/');
 
+    % Seconds per Sherd, for time estimate
+if normDim == 0
+        % (0.039 secons/sherd on macbook) no dimension normalizing
+    apxSecPerSherd = 0.039*1.2; % With 20% error
+else
+        % (0.132 secons/sherd on macbook) with dimension normalizing
+    apxSecPerSherd = 0.132*1.2; % With 20% error
+end
+ 
 
 addpath ../lib/         % Add library path
 
@@ -83,12 +92,6 @@ else
     else
     end
 end
-
-%% Statistical Preallocations
-TMpcts = zeros(nStamps*nSherds);    % TM percentages
-
-nblank = 0;                         % Number of blanks
-
 %% Gather files
     % Find all ceramics under directory
 cfiles = dir(strcat(tmt_path, '/*.', tmtExt));
@@ -96,9 +99,17 @@ cfiles = dir(strcat(tmt_path, '/*.', tmtExt));
     % Find all sherds under directory
 sfiles = dir(strcat(shrd_path, '/*.', sext));
 
+
+%% Statistical Preallocations
+TMpcts = zeros(nStamps*nSherds);    % TM percentages
+
+nblank = 0;                         % Number of blanks
+
+sherdsMade = length(cfiles)*nSherds*nStamps;
+
 %% One happy notification to user before beginning hefty algorithm
-fprintf('Generating %i sherds, this may take a long time\n\r',...
-    length(cfiles)*nSherds*nStamps);
+fprintf('Generating %i sherds, this may take about %4.2f minutes\n\r',...
+    sherdsMade,(sherdsMade*apxSecPerSherd)/60);
 
 fprintf('Marked sherds will be stored in: \n\r \t%s\n\r',marked_path);
 fprintf('Blank sherds will be stored in: \n\r \t%s\n\r',blank_path);
