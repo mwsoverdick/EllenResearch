@@ -14,7 +14,7 @@ TMthresh = .015;
 shrd_path   = '../../db/Template Sherds/Processed';
 
     % Letter of speciemen i.e. 'E' 'A' etc.
-group    = 'E';
+group    = 'F';
 
     % Option to delete jpg_path before each run (1-yes/0-no)
 delImg = 1;
@@ -34,8 +34,8 @@ blank_path    = strcat('../../db/Synthesized Sherds/Blank/', group,'/');
 marked_path   = strcat('../../db/Synthesized Sherds/Marked/', group,'/');
 
     % Seconds per Sherd, for time estimate
-    % (0.039 secons/sherd on macbook) no dimension normalizing
-apxSecPerSherd = 0.039*1.2; % With 20% error
+    % (0.080 seconds/sherd on macbook) no dimension normalizing
+apxSecPerSherd = 0.08*1.1; % With 10% error
  
 
 addpath ../lib/         % Add library path
@@ -96,8 +96,8 @@ sherdsMade = length(cfiles)*nSherds*nStamps;
 fprintf('Generating %i sherds, this may take about %4.2f minutes\n\r',...
     sherdsMade,(sherdsMade*apxSecPerSherd)/60);
 
-fprintf('Marked sherds will be stored in: \n\r \t%s\n\r',marked_path);
-fprintf('Blank sherds will be stored in: \n\r \t%s\n\r',blank_path);
+fprintf('Marked sherds will be stored in: \n \t%s\n\r',marked_path);
+fprintf('Blank sherds will be stored in: \n \t%s\n\r',blank_path);
 
 %% Make Sherds
 if nSherds > length(sfiles)
@@ -226,3 +226,7 @@ fprintf('%i of %i sherds blank (%3.2f%%)\n\r',...
     nblank,...
     length(cfiles)*nSherds*nStamps,...
     (nblank/(length(cfiles)*nSherds*nStamps))*100);
+
+    % The sound of sweet success
+load handel
+sound(y,Fs)
