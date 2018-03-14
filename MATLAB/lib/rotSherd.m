@@ -1,25 +1,24 @@
-function [rBW,rB,rEdges] = rotSherd(theta, BW)
-%rotSherd Rotates a sherd based on ROI and Boundary
-%   ARGUMENTS:
-%       theta - angle
-%       BW - ROI
-% 
-%   RETURNS:
-%       rBW - rotated BW
-%       rB - Rotated boundary points
-%       rEdges - edges
+function oSherd = rotSherd(iSherd,angle, pad)
+%ROTSHERD Rotates a sherd a certain angle
+
+    % Assume padding is zero if not provided
+if nargin == 2
+    pad = 0;
+else
+end
 
     % Rotate ROI
-rBW = imrotate(BW, theta);
+rSherd = imrotate(iSherd, angle);
 
-    % Isolate primary object (filter 3)
-rB = bwboundaries(rBW, 8, 'noholes');  
-[~,idx] = max(cellfun('length', rB));
+    % Find object
+rB = findBigObj(rSherd);
 
-    % Delete unecessary objects
-rB = rB{idx};
+    % Initialize bounds vector
+edges = boundEdges(rB);
 
-    % Crop the sherd
-[rBW, rB, rEdges] = croproi(rBW, rB, 0);
+    % Crop
+oSherd = imcrop(rSherd, [edges(3) - pad, edges(1) - pad,...
+             edges(4)-edges(3) + 2*pad, edges(2)-edges(1) + 2*pad]);
+
 end
 

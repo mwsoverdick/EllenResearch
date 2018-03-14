@@ -14,13 +14,10 @@ TMthresh = .015;
 shrd_path   = '../../db/Template Sherds/Processed';
 
     % Letter of speciemen i.e. 'E' 'A' etc.
-specimen    = 'F';
+group    = 'E';
 
     % Option to delete jpg_path before each run (1-yes/0-no)
 delImg = 1;
-
-    % Normalize dimensions (make all images same, square dimension)
-normDim = 0;
 
     % How many times to stamp sherd into ceramic (randomized)
 nStamps = 20;
@@ -28,25 +25,17 @@ nStamps = 20;
     % How many sherds to use (total stamps = nStamps*nSherds*numCeramics)
 nSherds = 102;
 
-    % Show duration, 0 for off
-show = 0;
-
 %% Setup
     % Path to ceramics to be sherded (.TMT files)
-tmt_path    = strcat('../../db/Complete Ceramics/Traced/', specimen);
+tmt_path    = strcat('../../db/Complete Ceramics/Traced/', group);
 
     % Path to place synthetic sherds
-blank_path    = strcat('../../db/Synthesized Sherds/Blank/', specimen,'/');
-marked_path   = strcat('../../db/Synthesized Sherds/Marked/', specimen,'/');
+blank_path    = strcat('../../db/Synthesized Sherds/Blank/', group,'/');
+marked_path   = strcat('../../db/Synthesized Sherds/Marked/', group,'/');
 
     % Seconds per Sherd, for time estimate
-if normDim == 0
-        % (0.039 secons/sherd on macbook) no dimension normalizing
-    apxSecPerSherd = 0.039*1.2; % With 20% error
-else
-        % (0.132 secons/sherd on macbook) with dimension normalizing
-    apxSecPerSherd = 0.132*1.2; % With 20% error
-end
+    % (0.039 secons/sherd on macbook) no dimension normalizing
+apxSecPerSherd = 0.039*1.2; % With 20% error
  
 
 addpath ../lib/         % Add library path
@@ -64,10 +53,6 @@ if ~exist(strcat(shrd_path,'/meta.shrdinf'),'file')
     error('Missing template sherd info: "meta.shrdinf" in template sherd directory!');
 else
     load(strcat(shrd_path,'/meta.shrdinf'),'-mat');
-    if normDim > 0
-        fprintf('Sherd image dimensions: %i x %i\n\r',diag,diag);
-    else
-    end
 end
 
 %% File system setup
@@ -125,8 +110,9 @@ end
 rands = rng;
 rng(seed);
     
-tic
-first = true;
+tic % For execution time computation
+
+sCtr = 1;
     % Run until all ceramics cared for
 for i = 1:length(cfiles)
 
@@ -151,15 +137,6 @@ for i = 1:length(cfiles)
     center(1,1) = cEdges(3) + radx;
     center(1,2) = cEdges(1) + rady;
     
-            % Show sherd process if desired
-    if show > 0
-        imshow(img);
-        hold on;
-        plot(cB(:,2), cB(:,1), 'r','LineWidth',2);    % Show boundary
-        plot(center(1,1),center(1,2),'g*');
-    else
-    end
-    
         % Run until each sherd is stamped nStamps times
     for j = 1:nSherds    
         
@@ -176,11 +153,8 @@ for i = 1:length(cfiles)
             rcoords(1) = floor(center(1,1) + r .* cos(thetas));
             rcoords(2) = floor(center(1,2) + r .* sin(thetas));
 
-                % Generate random angle for sherd rotation
-            rangle = 360*rand(1);
-            
-                % Rotate sherd
-            rBW = uint8(rotSherd(rangle,sherd.BW));
+                % Rotate stamp random angle
+            rBW = uint8(rotStamp(360*rand(1),sherd.BW));
             
                 % Translate sherd by ajusting window of ceramic
             s = size(rBW);
@@ -189,35 +163,13 @@ for i = 1:length(cfiles)
             BL = rcoords(1) - ceil(s(2)/2)+1; % Bottom Left
             BR = rcoords(1) + floor(s(2)/2);  % Bottom Right
             
-                % Only normalize image size if desired
-            if normDim > 0
-                    % Pre allocate canvas
-                out     = uint8(zeros(diag, diag, 3));
+                % Pre allocate canvas
+            cutSherd     = uint8(zeros(length(TL:TR), length(BL:BR), 3));
 
-                    % Calculate positions to store sherd to keep constant dim
-                    % Row:
-                pdrl    = length(TL:TR);
-                pdr     = floor((diag-pdrl) / 2);
-                pdre    = pdr+pdrl-1;
-                    % Column:
-                pdcl    = length(BL:BR);
-                pdc     = floor((diag-pdcl) / 2);
-                pdce    = pdc+pdcl-1;
-
-                    % Store sherd within large canvas
-                out(pdr:pdre,pdc:pdce,1) = img(TL:TR,BL:BR,1).*rBW;
-                out(pdr:pdre,pdc:pdce,2) = img(TL:TR,BL:BR,2).*rBW;
-                out(pdr:pdre,pdc:pdce,3) = img(TL:TR,BL:BR,3).*rBW;
-            else
-                    % Pre allocate canvas
-                out     = uint8(zeros(length(TL:TR), length(BL:BR), 3));
-                
-                    % Store sherd within canvas
-                out(:,:,1) = img(TL:TR,BL:BR,1).*rBW;
-                out(:,:,2) = img(TL:TR,BL:BR,2).*rBW;
-                out(:,:,3) = img(TL:TR,BL:BR,3).*rBW;
-            end
-             
+                % Store sherd within canvas
+            cutSherd(:,:,1) = img(TL:TR,BL:BR,1).*rBW;
+            cutSherd(:,:,2) = img(TL:TR,BL:BR,2).*rBW;
+            cutSherd(:,:,3) = img(TL:TR,BL:BR,3).*rBW;
             
                 % Check if trademark is in image
             TMchk = TMBW(TL:TR,BL:BR).*rBW;
@@ -232,14 +184,9 @@ for i = 1:length(cfiles)
             else
                 blank = false;
             end
-                
-                % Show sherd if desired
-            if show > 0
-                figure(2);
-                imshow(out);
-                pause(show)
-            else
-            end
+            
+                % Rotate sherd random angle
+            outSherd = rotSherd(cutSherd, 360*rand(1));
             
                 % Generate sherd image name: GROUP.INDIVIDUAL.SHERD.STAMP
             sname = strcat(cfiles(i).name(1:end-(length(tmtExt)+1)), '.',...
@@ -247,12 +194,11 @@ for i = 1:length(cfiles)
                         num2str(k,'%04i'),'.',...
                         'jpg');
                     
-                % Write image
             if blank
-                imwrite(out, strcat(blank_path,sname), 'JPEG');
+                imwrite(outSherd, strcat(blank_path,sname), 'JPEG');
                 nblank = nblank + 1;
             else
-                imwrite(out, strcat(marked_path,sname), 'JPEG');
+                imwrite(outSherd, strcat(marked_path,sname), 'JPEG');
             end
         end
     end

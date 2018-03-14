@@ -2,12 +2,12 @@
 % Mitchell Overdick 1/15/2018
 
 %% Initialization, non configurable
-clear all;
-close all;
+% clear all;
+% close all;
 
 %% Configurable Parameters
     % Letter of speciemen i.e. 'E' 'A' etc.
-specimen    = 'B';      
+specimen    = 'G';      
 
 img_ext     = 'jpg';        % File extension of images (no dot)
 
@@ -15,10 +15,10 @@ pause_t 	= 0;         	% Pause time after finishing image
 
 %% Setup
     % Path to ceramics to be sherded (.TMT files)
-tmt_path    = strcat('../../db/Complete Ceramics/Traced/', specimen);
+image_path    = strcat('../../db/Complete Ceramics/Untraced/', specimen,'/');
 
     % Path to place synthetic sherds
-image_path    = strcat('../../db/Synthesized Sherds/', specimen);
+tmt_path    = strcat('../../db/Complete Ceramics/Traced/', specimen,'/');
 
 addpath('../lib/');
 
@@ -51,7 +51,7 @@ for i = 1:length(files)
     TMsum = sum(sum(TMBW));
     
         % Save traced TM
-    tmtf = strcat(tmt_path, '/', files(i).name(1:end-(length(img_ext)+1)), '.TMT');
+    tmtf = strcat(tmt_path, files(i).name(1:end-(length(img_ext)+1)), '.TMT');
     fprintf('Saving traced TM to "%s" \n\r', tmtf);
     save(tmtf,'-mat','img','TMBW','TMsum'); 
     
